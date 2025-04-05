@@ -1,11 +1,10 @@
 import { View, Text } from "react-native";
 
-export default function Index() {
+export default function CreateNote() {
   return (
     <View>
-      <Text>Index</Text>
+      <Text>Create Note</Text>
     </View>
   );
 }
-
-
+        
