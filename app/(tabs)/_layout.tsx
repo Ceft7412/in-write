@@ -10,7 +10,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import NoteDetailsBottomSheet from "@/src/components/NoteDetailsBottomSheet";
 // Create a separate component that will use the context
 function TabsLayoutContent() {
-  const { isMoreMenuOpen, setIsMoreMenuOpen } = useTabs();
+  const { isMoreMenuOpen, setIsMoreMenuOpen, isSelectionMode } = useTabs();
   const colorScheme = useColorScheme();
   
   return (
@@ -56,7 +56,7 @@ function TabsLayoutContent() {
         }}/>
       </Tabs>
       
-      {isMoreMenuOpen && (
+      {isMoreMenuOpen && !isSelectionMode && (
         <Backdrop >  
             <MoreMenu />
         </Backdrop>

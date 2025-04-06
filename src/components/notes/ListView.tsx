@@ -3,12 +3,12 @@ import { COLORS } from "@/src/constants/COLORS";
 import { memo, useCallback, useState, useMemo } from "react";
 import { Note } from "@/src/types/Note";
 import { useTabs } from "@/src/contexts/TabsContext";
+import Feather from "@expo/vector-icons/Feather";
+
 export default function ListView() {
     const colorScheme = useColorScheme();
-    const { notes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection, selectAllNotes, clearSelection, toggleSelectionMode } = useTabs();
+    const { notes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection } = useTabs();
     
-
-
   const ListStyle = StyleSheet.create({
     container: {
       flex: 1,
@@ -33,6 +33,11 @@ export default function ListView() {
     noteItemPressed: {
       backgroundColor: colorScheme === "dark" ? COLORS.dark.accent + '30' : COLORS.light.accent + '30',
     },
+    selectedNote: {
+      backgroundColor: colorScheme === "dark" ? COLORS.dark.accent + '20' : COLORS.light.accent + '20',
+      borderColor: colorScheme === "dark" ? COLORS.dark.accent : COLORS.light.accent,
+      borderWidth: 1,
+    },
     title: {
       fontSize: 16,
       color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
@@ -47,48 +52,94 @@ export default function ListView() {
       fontSize: 10,
       color: colorScheme === "dark" ? COLORS.dark.textSecondary : COLORS.light.textSecondary,
     },
+    titleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    circleContainer: {
+      borderRadius: 5,
+    },
   });
 
-  // Create the component without memo first
-  const NoteItemComponent = ({ note}: { note: Note }) => (
-    <Pressable 
-      onPress={() => {}} 
-      onLongPress={() => {
+  // Simplify the selection indicator
+  const CheckIcon = memo(() => {
+    const colorScheme = useColorScheme();
+    return (
+      <Feather 
+        name="check" 
+        size={15} 
+        color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} 
+      />
+    );
+  });
+
+  // Create a properly memoized NoteItem component
+  const NoteItem = memo(({ note, isSelected }: { note: Note, isSelected: boolean }) => {
+    const { isSelectionMode, toggleNoteSelection, setSelectedNoteId } = useTabs();
+    
+    // Handlers are created inside the component but memoized to prevent re-creation
+    const handlePress = useCallback(() => {
+      if (isSelectionMode) {
+        toggleNoteSelection(note.id.toString());
+      } else {
         setSelectedNoteId(note.id.toString());
-      }}
-      style={({ pressed }) => [
-        NoteItemStyle.noteItem,
-        pressed && NoteItemStyle.noteItemPressed
-      ]}
-    >
-      {({ pressed }) => (
+      }
+    }, [note.id, isSelectionMode]);
+    
+    const handleLongPress = useCallback(() => {
+      if (isSelectionMode) {
+        toggleNoteSelection(note.id.toString());
+      } else {
+        setSelectedNoteId(note.id.toString());
+      }
+    }, [note.id, isSelectionMode]);
+    
+    return (
+      <Pressable 
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        delayLongPress={200}
+        style={[
+          NoteItemStyle.noteItem,
+          isSelected && isSelectionMode && NoteItemStyle.selectedNote
+        ]}
+      >
         <View>
-          {/* Title */}
-          <Text style={NoteItemStyle.title} numberOfLines={1}>{note.title || "Untitled"} </Text>
+          <View style={NoteItemStyle.titleContainer}>
+            <Text style={NoteItemStyle.title} numberOfLines={1}>
+              {note.title || "Untitled"}
+            </Text>
+            {isSelected && isSelectionMode && (
+              <View style={NoteItemStyle.circleContainer}>
+                <CheckIcon />
+              </View>
+            )}
+          </View>
 
-          {/* Content */}
-          <Text style={NoteItemStyle.content} numberOfLines={2}>{note.content || "No content"}</Text>
+          <Text style={NoteItemStyle.content} numberOfLines={2}>
+            {note.content || "No content"}
+          </Text>
 
-          {/* Created At */}
-          <Text style={NoteItemStyle.createdAt}>{note.createdAt || "No date"}</Text>
+          <Text style={NoteItemStyle.createdAt}>
+            {note.createdAt || "No date"}
+          </Text>
         </View>
-      )}
-    </Pressable>
-  );
-  
-  // Then memoize it without dependencies to use our already reactive styles
-  const NoteItem = memo(NoteItemComponent);
+      </Pressable>
+    );
+  });
 
   // Key Extractor is used to extract the key from the item
   const KeyExtractor = useCallback((item: Note) => item.id.toString(), []);
+  
   // Item Separator is used to separate the items
   const ItemSeparator = useCallback(() => <View style={ListStyle.separator} />, []);
 
-  // Render Item is used to render the item
-  // We need to include the NoteItem in dependencies to re-render when theme changes
-  const RenderItem = useCallback(({ item }: { item: Note }) => (
-    <NoteItem note={item}/>
-  ), [NoteItem]);
+  // Simplified render function
+  const RenderItem = useCallback(({ item }: { item: Note }) => {
+    const isSelected = selectedNoteIds.includes(item.id.toString());
+    return <NoteItem note={item} isSelected={isSelected} />;
+  }, [selectedNoteIds]);
   
   return (
     <View style={ListStyle.container}>
@@ -105,6 +156,7 @@ export default function ListView() {
         removeClippedSubviews={true}
         contentContainerStyle={{paddingBottom: 60}}
         renderItem={RenderItem}
+        extraData={[isSelectionMode, selectedNoteIds]}
       />
     </View>
   );

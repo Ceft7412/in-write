@@ -5,13 +5,13 @@ import { useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import { useState, useCallback } from "react";
-
+import { useTabs } from "@/src/contexts/TabsContext";
 
 // Memoize the component
 export default function MoreMenu() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
-
+    const {setIsSelectionMode, setIsMoreMenuOpen} = useTabs();
     const [isPressed, setIsPressed] = useState({
         selectAll: false,
         view: false,
@@ -66,10 +66,14 @@ export default function MoreMenu() {
 
                 {/* TouchableOpacity */}
                
-                <Pressable onPressIn={() => onPressIn("selectAll")} onPressOut={() => onPressOut("selectAll")} style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.selectAll ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
+                <Pressable onPress={() => {
+                    setIsSelectionMode(true);
+                    // Also close the more menu when selection mode is activated
+                    setIsMoreMenuOpen(false);
+                }}  style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.selectAll ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
                     <View style={MoreMenuStyle.item}>
                         {/* Text */}
-                        <Text style={MoreMenuStyle.title}>Select All</Text>
+                        <Text style={MoreMenuStyle.title}>Select</Text>
                     {/* Icon */}
                         <Feather name="check" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
                     </View>

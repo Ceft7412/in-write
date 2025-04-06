@@ -1,4 +1,4 @@
-import { View, Text, useColorScheme } from "react-native";
+import { View, Text, useColorScheme, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "@/src/constants/COLORS";
 import { StyleSheet } from "react-native";
@@ -11,11 +11,11 @@ import { useTabs } from "@/src/contexts/TabsContext";
 import ListView from "@/src/components/notes/ListView";
 import EvenGridView from "@/src/components/notes/EvenGridView";
 import UnevenGridView from "@/src/components/notes/UnevenGridView";
-
+import Selection from "@/src/components/Selection";
 
 export default function Index() {
   const colorScheme = useColorScheme();
-  const {noteView} = useTabs();
+  const {noteView, isSelectionMode, selectedNoteIds} = useTabs();
 
 
 
@@ -51,7 +51,11 @@ export default function Index() {
       <View style={HomeStyle.innerContainer}>
 
         {/* Header */}
-        <Header title="My Notes" onPress={() => {}}/>
+        {!isSelectionMode ? (
+          <Header title="My Notes" onPress={() => {}}/>
+        ) : (
+          <Selection selectedNoteIds={selectedNoteIds.map(String)}/>
+        )}
 
         {/* Notes */}
         <View style={{flex:1}}>

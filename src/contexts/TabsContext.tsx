@@ -1,5 +1,4 @@
-
-import { createContext, useContext, useMemo, useState, useEffect } from "react";
+import { createContext, useContext, useMemo, useState, useEffect, useCallback } from "react";
 import { Note } from "../types/Note";
 import { notesData } from "../mock/NotesData";
 interface TabsContextType {
@@ -13,6 +12,7 @@ interface TabsContextType {
     setSelectedNoteIds: (noteIds: string[]) => void;
     selectedNoteIds: string[];
     isSelectionMode: boolean;
+    setIsSelectionMode: (isSelectionMode: boolean) => void;
     toggleNoteSelection: (noteId: string) => void;
     selectAllNotes: (notes: Note[]) => void;
     clearSelection: () => void;
@@ -32,46 +32,65 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         setNotes(notesData)
     }, [])
-
-    // Track when there is selected note
-    useEffect(() => {
-        if(selectedNoteId){
-            console.log("Selected Note ID", selectedNoteId)
+    
+    // Fast toggle note selection without extra logging or object spreading
+    const toggleNoteSelection = useCallback((noteId: string) => {
+        if (isSelectionMode) {
+            setSelectedNoteIds(prev => {
+                // If already selected, remove it
+                if (prev.includes(noteId)) {
+                    return prev.filter(id => id !== noteId);
+                }
+                // Otherwise add it
+                return [...prev, noteId];
+            });
         }
-    }, [selectedNoteId])
-
-    const toggleNoteSelection = (noteId: string) => {
-        setSelectedNoteIds(prev => {
-            if(prev.includes(noteId)){
-                return prev.filter(id => id !== noteId)
-            }
-
-            return [...prev, noteId]
-        })
-    }
+    }, [isSelectionMode]);
 
     // Get the selected individual note 
     const selectedNote = useMemo(() => {
         return notes.find(note => selectedNoteIds.includes(note.id.toString())) || null;
     }, [selectedNoteIds, notes])
 
-    const selectAllNotes = (notes: Note[]) => {
+    // Optimized to use a callback for better performance
+    const selectAllNotes = useCallback((notes: Note[]) => {
         setSelectedNoteIds(notes.map(note => note.id.toString()))
-    }
+    }, []);
 
-    const clearSelection = () => {
+    // Optimized to use a callback for better performance
+    const clearSelection = useCallback(() => {
         setSelectedNoteIds([])
-    }
+    }, []);
     
-    const toggleSelectionMode = () => {
+    // Optimized to use a callback for better performance
+    const toggleSelectionMode = useCallback(() => {
         setIsSelectionMode(prev => !prev);
         if(isSelectionMode){
             clearSelection();
+            setIsMoreMenuOpen(false);
         }
-    }
+    }, [isSelectionMode, clearSelection, setIsMoreMenuOpen]);
 
     return (
-        <TabsContext.Provider value={{ setSelectedNoteIds, selectedNoteIds, isMoreMenuOpen, setIsMoreMenuOpen, noteView, setNoteView, notes, selectedNoteId, setSelectedNoteId, isSelectionMode, toggleNoteSelection, selectAllNotes, clearSelection, toggleSelectionMode }}>{children}</TabsContext.Provider>
+        <TabsContext.Provider value={{ 
+            setIsSelectionMode, 
+            setSelectedNoteIds, 
+            selectedNoteIds, 
+            isMoreMenuOpen, 
+            setIsMoreMenuOpen, 
+            noteView, 
+            setNoteView, 
+            notes, 
+            selectedNoteId, 
+            setSelectedNoteId, 
+            isSelectionMode, 
+            toggleNoteSelection, 
+            selectAllNotes, 
+            clearSelection, 
+            toggleSelectionMode 
+        }}>
+            {children}
+        </TabsContext.Provider>
     )
 }
 
