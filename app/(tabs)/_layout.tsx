@@ -6,7 +6,8 @@ import { COLORS } from "@/src/constants/COLORS";
 import Backdrop from "@/src/components/Backdrop";
 import MoreMenu from "@/src/components/MoreMenu";
 import { TabsProvider, useTabs } from "@/src/contexts/TabsContext";
-
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import NoteDetailsBottomSheet from "@/src/components/NoteDetailsBottomSheet";
 // Create a separate component that will use the context
 function TabsLayoutContent() {
   const { isMoreMenuOpen, setIsMoreMenuOpen } = useTabs();
@@ -14,11 +15,12 @@ function TabsLayoutContent() {
   
   return (
     <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <Tabs screenOptions={{
         headerShown: false,
         animation: "shift",
         tabBarStyle: {
-          borderTopWidth: colorScheme === "dark" ? 0 : 0.5,
+          borderTopWidth: colorScheme === "dark" ? 0 : 0.5  ,
           height: 60,
           paddingTop: 10,
           elevation: 0,
@@ -59,6 +61,8 @@ function TabsLayoutContent() {
             <MoreMenu />
         </Backdrop>
       )}
+      <NoteDetailsBottomSheet />
+      </GestureHandlerRootView>
     </>
   );
 }

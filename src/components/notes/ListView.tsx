@@ -1,11 +1,11 @@
-import { notesData } from "@/src/mock/NotesData";
 import { View, Text, StyleSheet, FlatList, useColorScheme, Pressable } from "react-native";
 import { COLORS } from "@/src/constants/COLORS";
 import { memo, useCallback, useState, useMemo } from "react";
 import { Note } from "@/src/types/Note";
-
+import { useTabs } from "@/src/contexts/TabsContext";
 export default function ListView() {
     const colorScheme = useColorScheme();
+    const { notes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection, selectAllNotes, clearSelection, toggleSelectionMode } = useTabs();
     
 
 
@@ -50,10 +50,12 @@ export default function ListView() {
   });
 
   // Create the component without memo first
-  const NoteItemComponent = ({ note, onPress, onLongPress }: { note: Note, onPress: () => void, onLongPress: () => void }) => (
+  const NoteItemComponent = ({ note}: { note: Note }) => (
     <Pressable 
-      onPress={onPress} 
-      onLongPress={onLongPress}
+      onPress={() => {}} 
+      onLongPress={() => {
+        setSelectedNoteId(note.id.toString());
+      }}
       style={({ pressed }) => [
         NoteItemStyle.noteItem,
         pressed && NoteItemStyle.noteItemPressed
@@ -85,14 +87,14 @@ export default function ListView() {
   // Render Item is used to render the item
   // We need to include the NoteItem in dependencies to re-render when theme changes
   const RenderItem = useCallback(({ item }: { item: Note }) => (
-    <NoteItem note={item} onPress={() => {}} onLongPress={() => {}} />
+    <NoteItem note={item}/>
   ), [NoteItem]);
   
   return (
     <View style={ListStyle.container}>
       <FlatList
         showsVerticalScrollIndicator={false}
-        data={notesData || []}
+        data={notes}
         keyExtractor={KeyExtractor}
         ItemSeparatorComponent={ItemSeparator}
         contentInsetAdjustmentBehavior="automatic"
