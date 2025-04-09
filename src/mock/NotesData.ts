@@ -1,5 +1,12 @@
 import { Note } from "@/src/types/Note";
 
+
+export const NoteView = {
+  grid: "grid",
+  list: "list",
+  table: "table",
+}
+
 /*
  * Mock data for notes
 */
@@ -11,7 +18,7 @@ export const notesData: Note[] = [
     createdAt: "2021-01-01",
     updatedAt: "2021-01-01",
     backgroundColor: "#000000",
-    isFavorite: false,
+    isFavorite: true,
     isArchived: false,
     isTrashed: false,
   },
@@ -22,7 +29,7 @@ export const notesData: Note[] = [
     createdAt: "2021-01-01",
     updatedAt: "2021-01-01",
     backgroundColor: "#000000",
-    isFavorite: false,
+    isFavorite: true,
     isArchived: false,
     isTrashed: false,
   },
@@ -55,7 +62,7 @@ export const notesData: Note[] = [
     createdAt: "2021-01-01",
     updatedAt: "2021-01-01",
     backgroundColor: "#000000",
-    isFavorite: false,
+    isFavorite: true,
     isArchived: false,
     isTrashed: false,
   },

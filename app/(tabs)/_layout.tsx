@@ -8,9 +8,10 @@ import MoreMenu from "@/src/components/MoreMenu";
 import { TabsProvider, useTabs } from "@/src/contexts/TabsContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import NoteDetailsBottomSheet from "@/src/components/NoteDetailsBottomSheet";
+import ViewMenu from "@/src/components/ViewMenu";
 // Create a separate component that will use the context
 function TabsLayoutContent() {
-  const { isMoreMenuOpen, setIsMoreMenuOpen, isSelectionMode } = useTabs();
+  const { isMoreMenuOpen, setIsMoreMenuOpen, isSelectionMode, isViewMenuOpen, setIsViewMenuOpen } = useTabs();
   const colorScheme = useColorScheme();
   
   return (
@@ -24,6 +25,7 @@ function TabsLayoutContent() {
           height: 60,
           paddingTop: 10,
           elevation: 0,
+          display: isSelectionMode ? "none" : "flex",
           backgroundColor: colorScheme === "dark" ? COLORS.dark.background : COLORS.light.background,
         }
       }}>
@@ -59,6 +61,12 @@ function TabsLayoutContent() {
       {isMoreMenuOpen && !isSelectionMode && (
         <Backdrop >  
             <MoreMenu />
+        </Backdrop>
+      )}
+
+      {isViewMenuOpen && (
+        <Backdrop >  
+            <ViewMenu />
         </Backdrop>
       )}
       <NoteDetailsBottomSheet />

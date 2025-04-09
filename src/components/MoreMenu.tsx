@@ -11,10 +11,11 @@ import { useTabs } from "@/src/contexts/TabsContext";
 export default function MoreMenu() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
-    const {setIsSelectionMode, setIsMoreMenuOpen} = useTabs();
+    const {handleSelection, toggleNoteView} = useTabs();
     const [isPressed, setIsPressed] = useState({
         selectAll: false,
         view: false,
+        archive: false,
         trash: false,
         settings: false,
     });
@@ -66,11 +67,7 @@ export default function MoreMenu() {
 
                 {/* TouchableOpacity */}
                
-                <Pressable onPress={() => {
-                    setIsSelectionMode(true);
-                    // Also close the more menu when selection mode is activated
-                    setIsMoreMenuOpen(false);
-                }}  style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.selectAll ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
+                <Pressable onPress={handleSelection}  style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.selectAll ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
                     <View style={MoreMenuStyle.item}>
                         {/* Text */}
                         <Text style={MoreMenuStyle.title}>Select</Text>
@@ -80,10 +77,18 @@ export default function MoreMenu() {
                 </Pressable>
 
                 {/* Item */}
-                <Pressable onPressIn={() => onPressIn("view")} onPressOut={() => onPressOut("view")} style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.view ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
+                <Pressable onPress={toggleNoteView} style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.view ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
                     <View style={MoreMenuStyle.item}>
                         <Text style={MoreMenuStyle.title}>View</Text>
                         <Feather name="grid" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                    </View>
+                </Pressable>
+
+                {/* Item */}
+                <Pressable onPressIn={() => onPressIn("archive")} onPressOut={() => onPressOut("archive")} style={[MoreMenuStyle.borderRadius, {backgroundColor: isPressed.archive ? colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground : "transparent"}]}>
+                    <View style={MoreMenuStyle.item}>
+                        <Text style={MoreMenuStyle.title}>Archive</Text>
+                        <Feather name="archive" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
                     </View>
                 </Pressable>
 

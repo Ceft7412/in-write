@@ -42,9 +42,9 @@ const baseStyles = StyleSheet.create({
   },
 });
 
-export default function ListView() {
+export default function FavoriteListView() {
   const colorScheme = useColorScheme();
-  const { filteredNotes, notes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection } = useTabs();
+  const { favoriteNotes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection } = useTabs();
   
   // Memoize theme-dependent styles
   const themeStyles = useMemo(() => StyleSheet.create({
@@ -106,7 +106,7 @@ export default function ListView() {
       } else {
         setSelectedNoteId(note.id.toString());
       }
-    }, [note.id]);
+    }, [note.id, isSelectionMode, toggleNoteSelection, setSelectedNoteId]);
     
     return (
       <Pressable 
@@ -158,7 +158,7 @@ export default function ListView() {
     <View style={themeStyles.container}>
       <FlatList
         showsVerticalScrollIndicator={false}
-        data={filteredNotes}
+        data={favoriteNotes}
         keyExtractor={KeyExtractor}
         ItemSeparatorComponent={ItemSeparator}
         contentInsetAdjustmentBehavior="automatic"
@@ -173,4 +173,4 @@ export default function ListView() {
       />
     </View>
   );
-}
+} 

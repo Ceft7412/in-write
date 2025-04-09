@@ -7,7 +7,7 @@ interface BackdropProps {
 }
 
 export default function Backdrop({ children }: BackdropProps) { 
-    const { setIsMoreMenuOpen } = useTabs();
+    const { setIsMoreMenuOpen, isMoreMenuOpen, isViewMenuOpen, setIsViewMenuOpen     } = useTabs();
 
 
     const BackdropStyle = StyleSheet.create({
@@ -20,11 +20,19 @@ export default function Backdrop({ children }: BackdropProps) {
             right: 0,
         }
     });
+
+    const handlePress = () => {
+        if (isMoreMenuOpen) {
+            setIsMoreMenuOpen(false);
+        }
+        if (isViewMenuOpen) {
+            setIsViewMenuOpen(false);
+        }
+    }
+
     return (
         <>
-            <TouchableWithoutFeedback  onPress={() => {
-                setIsMoreMenuOpen(false);
-            }}>
+            <TouchableWithoutFeedback  onPress={handlePress}>
                 <View style={BackdropStyle.backdrop}>
             {children}
             </View>
