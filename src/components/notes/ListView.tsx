@@ -45,8 +45,6 @@ const baseStyles = StyleSheet.create({
 export default function ListView() {
   const colorScheme = useColorScheme();
   const { filteredNotes, notes, setSelectedNoteId, selectedNoteIds, isSelectionMode, toggleNoteSelection } = useTabs();
-  // Track which note item is currently being pressed
-  const [pressedNoteId, setPressedNoteId] = useState<string | null>(null);
   
   // Memoize theme-dependent styles
   const themeStyles = useMemo(() => StyleSheet.create({
@@ -98,29 +96,31 @@ export default function ListView() {
       if (isSelectionMode) {
         toggleNoteSelection(note.id.toString());
       } else {
+        console.log("note.id", note.id);
         setSelectedNoteId(note.id.toString());
       }
     }, [note.id, isSelectionMode, toggleNoteSelection, setSelectedNoteId]);
 
     const handleLongPress = useCallback(() => {
-      // Always toggle selection on long press
-      toggleNoteSelection(note.id.toString());
-    }, [note.id, toggleNoteSelection]);
+      if (isSelectionMode) {
+        toggleNoteSelection(note.id.toString());
+      } else {
+        setSelectedNoteId(note.id.toString());
+      }
+    }, [note.id]);
     
     return (
       <Pressable 
-        onPress={handlePress}
         onLongPress={handleLongPress}
-        onPressIn={() => setPressedNoteId(note.id.toString())}
-        onPressOut={() => setPressedNoteId(null)}
+        onPress={handlePress}
         delayLongPress={200}
         style={[
           themeStyles.noteItem,
           isSelected && isSelectionMode && themeStyles.selectedNote,
-          pressedNoteId === note.id.toString() && themeStyles.noteItemPressed,
           {
-            backgroundColor: note.backgroundColor || (colorScheme === "dark" ? COLORS.dark.secondaryBackground : COLORS.light.secondaryBackground),
+            backgroundColor: note.backgroundColor,
           }
+          
         ]}
       >
         <View>
@@ -153,18 +153,17 @@ export default function ListView() {
   // Item Separator is used to separate the items
   const ItemSeparator = useCallback(() => <View style={baseStyles.separator} />, []);
 
-  // Render item is used to render each item
-  const renderItem = useCallback(({ item }: { item: Note }) => {
+  // Simplified render function
+  const RenderItem = useCallback(({ item }: { item: Note }) => {
     const isSelected = selectedNoteIds.includes(item.id.toString());
     return <NoteItem note={item} isSelected={isSelected} />;
-  }, [selectedNoteIds, toggleNoteSelection, isSelectionMode, setSelectedNoteId]);
-
+  }, [selectedNoteIds, themeStyles]);
+  
   return (
     <View style={themeStyles.container}>
       <FlatList
         showsVerticalScrollIndicator={false}
         data={filteredNotes}
-        renderItem={renderItem}
         keyExtractor={KeyExtractor}
         ItemSeparatorComponent={ItemSeparator}
         contentInsetAdjustmentBehavior="automatic"
@@ -173,8 +172,9 @@ export default function ListView() {
         maxToRenderPerBatch={10} 
         updateCellsBatchingPeriod={50}
         removeClippedSubviews={true}
-        contentContainerStyle={{paddingBottom: 100}} // Add padding for selection bottom tab
-        extraData={[isSelectionMode, selectedNoteIds, colorScheme]}
+        contentContainerStyle={{paddingBottom: 60}}
+        renderItem={RenderItem}
+        extraData={[isSelectionMode, selectedNoteIds, colorScheme, themeStyles]}
       />
     </View>
   );
