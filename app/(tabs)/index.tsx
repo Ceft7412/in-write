@@ -41,7 +41,6 @@ export default function Index() {
     innerContainer: {
       flex: 1,
       backgroundColor: colorScheme === "dark" ? COLORS.dark.background : COLORS.light.background,
-      paddingVertical: 15,
       paddingHorizontal: 20,
     }
   })

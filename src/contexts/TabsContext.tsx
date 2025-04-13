@@ -51,23 +51,32 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
         return notes.filter(note => note.isFavorite === true && note.isArchived === false && note.isTrashed === false);
     }, [notes]);
 
-    // Fast toggle note selection without extra logging or object spreading
+    // Toggle note selection with improved behavior
     const toggleNoteSelection = useCallback((noteId: string) => {
-        if (isSelectionMode) {
-            setSelectedNoteIds(prev => {
-                // If already selected, remove it
-                if (prev.includes(noteId)) {
-                    return prev.filter(id => id !== noteId);
-                }
-                // Otherwise add it
-                return [...prev, noteId];
-            });
+        if (!isSelectionMode) {
+            // If not in selection mode, enter it and add this note
+            setIsSelectionMode(true);
+            setSelectedNoteIds([noteId]);
+            return;
         }
+        
+        setSelectedNoteIds(prev => {
+            // If already selected, remove it
+            if (prev.includes(noteId)) {
+                const newSelection = prev.filter(id => id !== noteId);
+                // If no more selected notes, exit selection mode
+                if (newSelection.length === 0) {
+                    setIsSelectionMode(false);
+                }
+                return newSelection;
+            }
+            // Otherwise add it
+            return [...prev, noteId];
+        });
     }, [isSelectionMode]);
 
     // Selection clicked then menu more close
     const handleSelection = useCallback(() => {
-        console.log("Handle selection");
         setIsMoreMenuOpen(false);
         setIsSelectionMode(true);
         // Clear any previously selected notes when entering selection mode
@@ -84,9 +93,10 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
         setSelectedNoteIds(notes.map(note => note.id.toString()))
     }, []);
 
-    // Optimized to use a callback for better performance
+    // Clear selection and exit selection mode if needed
     const clearSelection = useCallback(() => {
-        setSelectedNoteIds([])
+        setSelectedNoteIds([]);
+        setIsSelectionMode(false);
     }, []);
     
     // Optimized to use a callback for better performance
@@ -100,15 +110,14 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
 
     const toggleNoteView = useCallback(() => {
         setIsViewMenuOpen(prev => !prev);
-            setIsMoreMenuOpen(false);
-    }, [isViewMenuOpen, setIsMoreMenuOpen]);
+        setIsMoreMenuOpen(false);
+    }, []);
     
 
     const handleSetNoteView = useCallback((view: string) => {
         setNoteView(view);
         setIsViewMenuOpen(false);
-        console.log("Note view set to: ", view);
-    }, [setNoteView, setIsViewMenuOpen]);
+    }, []);
 
     return (
         <TabsContext.Provider value={{ 

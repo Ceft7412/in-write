@@ -1,10 +1,9 @@
-
-import { View, Text, StyleSheet, TouchableWithoutFeedback, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, StyleSheet, TouchableWithoutFeedback, TouchableOpacity, Pressable, Animated } from "react-native";
 import { COLORS } from "@/src/constants/COLORS";
 import { useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useTabs } from "@/src/contexts/TabsContext";
 
 // Memoize the component
@@ -12,6 +11,27 @@ export default function MoreMenu() {
     const insets = useSafeAreaInsets();
     const colorScheme = useColorScheme();
     const {handleSelection, toggleNoteView} = useTabs();
+    
+    // Animation values
+    const scaleAnim = useRef(new Animated.Value(0.5)).current;
+    const opacityAnim = useRef(new Animated.Value(0)).current;
+    
+    // Run animation when component mounts
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(scaleAnim, {
+                toValue: 1,
+                duration: 150,
+                useNativeDriver: true
+            }),
+            Animated.timing(opacityAnim, {
+                toValue: 1,
+                duration: 100,
+                useNativeDriver: true
+            })
+        ]).start();
+    }, []);
+    
     const [isPressed, setIsPressed] = useState({
         selectAll: false,
         view: false,
@@ -60,8 +80,15 @@ export default function MoreMenu() {
         <TouchableWithoutFeedback onPress={(e) => {
             e.stopPropagation();
         }}>
-            <View style={MoreMenuStyle.container}>
-
+            <Animated.View 
+                style={[
+                    MoreMenuStyle.container,
+                    {
+                        opacity: opacityAnim,
+                        transform: [{ scale: scaleAnim }]
+                    }
+                ]}
+            >
                 {/* Item */}
                 {/* Modify when onpress the background color change */}
 
@@ -110,7 +137,7 @@ export default function MoreMenu() {
                 
                 
                 
-            </View>
+            </Animated.View>
         </TouchableWithoutFeedback>
     )
 }
