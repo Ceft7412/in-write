@@ -2,12 +2,11 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Pressable, useColorSchem
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "@/src/constants/COLORS";
 import { StatusBar } from "expo-status-bar";
-import { useState, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
-import { Note } from "@/src/types/Note";
 import { foldersData } from "@/src/mock/NotesData";
-import { shareContent } from "@/src/components/ShareSheet";
+import { CreateNoteProvider, useCreateNote } from "@/src/contexts/CreateNoteContext";
 
 // Color options for note background
 const colorOptions = [
@@ -23,24 +22,60 @@ const colorOptions = [
   '#fdcfe8',
 ];
 
-export default function CreateNote() {
+// Drawing brush options
+const drawingColors = ['#000000', '#FF0000', '#0000FF', '#00FF00', '#FFFF00', '#FF00FF'];
+const brushSizes = [2, 4, 6, 8, 10];
+
+// Main component that uses the context
+function CreateNoteContent() {
   const colorScheme = useColorScheme();
   const router = useRouter();
+  const {
+    // Note data
+    title,
+    content,
+    selectedColor,
+    selectedFolderId,
+    isFavorite,
+    
+    // UI state
+    showColorPicker,
+    showFolderPicker,
+    isAnyInputFocused,
+    
+    // Drawing state
+    isDrawingMode,
+    showDrawingTools,
+    selectedDrawingColor,
+    selectedBrushSize,
+    
+    // Actions
+    setTitle,
+    setContent,
+    setSelectedColor,
+    setSelectedFolderId,
+    toggleFavorite,
+    toggleColorPicker,
+    toggleFolderPicker,
+    toggleDrawingMode,
+    setIsAnyInputFocused,
+    setSelectedDrawingColor,
+    setSelectedBrushSize,
+    
+    // Operations
+    saveNote,
+    shareNote,
+    handleUndo,
+    handleRedo,
+    clearDrawing,
+  } = useCreateNote();
+
+  // Handle discard
+  const handleDiscard = () => {
+    router.back();
+  };
   
-  // Note state
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
-  const [isFavorite, setIsFavorite] = useState(false);
-  
-  // UI state
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [showFolderPicker, setShowFolderPicker] = useState(false);
-  const [pressedButton, setPressedButton] = useState<string | null>(null);
-  const [isAnyInputFocused, setIsAnyInputFocused] = useState(false);
-  
-  // Create the new note
+  // Handle save and navigate back
   const handleSaveNote = () => {
     if (!title.trim() && !content.trim()) {
       // Don't save empty notes
@@ -48,47 +83,8 @@ export default function CreateNote() {
       return;
     }
 
-    const newNote: Partial<Note> = {
-      title: title.trim(),
-      content: content.trim(),
-      backgroundColor: selectedColor,
-      isFavorite: isFavorite,
-      folderId: selectedFolderId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isArchived: false,
-      isTrashed: false,
-    };
-
-    console.log("Saving note:", newNote);
-    // Here you would actually save the note to your data store
-    
+    saveNote();
     router.back();
-  };
-
-  // Handle discard
-  const handleDiscard = () => {
-    router.back();
-  };
-  
-  // Handle share
-  const handleShare = () => {
-    const noteToShare: Partial<Note> = {
-      title: title,
-      content: content,
-    };
-    shareContent(noteToShare as Note);
-  };
-  
-  // Handle undo/redo
-  const handleUndo = () => {
-    console.log("Undo action");
-    // Implement undo logic
-  };
-  
-  const handleRedo = () => {
-    console.log("Redo action");
-    // Implement redo logic
   };
 
   // Get current folder name
@@ -150,20 +146,36 @@ export default function CreateNote() {
       borderTopWidth: 1,
       borderTopColor: colorScheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
       paddingVertical: 10,
-      paddingHorizontal: 20,
-      flexDirection: "row",
-      justifyContent: "space-between",
+      paddingHorizontal: 15,
       backgroundColor: colorScheme === "dark" 
         ? 'rgba(0,0,0,0.2)' 
         : 'rgba(255,255,255,0.9)',
     },
+    toolbarScrollContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 5,
+    },
     toolbarButton: {
-      padding: 8,
+      padding: 10,
       borderRadius: 20,
-      marginHorizontal: 5,
+      marginHorizontal: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 40,
+      height: 40,
     },
     toolbarButtonPressed: {
       backgroundColor: colorScheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    },
+    toolbarButtonActive: {
+      backgroundColor: colorScheme === "dark" ? COLORS.dark.accent + '30' : COLORS.light.accent + '30',
+    },
+    toolbarDivider: {
+      width: 1,
+      height: 30,
+      backgroundColor: colorScheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+      marginHorizontal: 8,
     },
     toolsContainer: {
       flexDirection: "row",
@@ -252,15 +264,86 @@ export default function CreateNote() {
       color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
       marginLeft: 5,
     },
-    toolbarScrollContent: {
+    toolbarIconGroup: {
       flexDirection: "row",
       alignItems: "center",
     },
-    toolbarDivider: {
-      width: 1,
-      height: "100%",
-      backgroundColor: colorScheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+    drawingCanvas: {
+      flex: 1,
+      backgroundColor: 'transparent',
     },
+    drawingToolsContainer: {
+      position: "absolute",
+      bottom: 70,
+      left: 20,
+      right: 20,
+      backgroundColor: colorScheme === "dark" ? COLORS.dark.card : COLORS.light.card,
+      borderRadius: 10,
+      padding: 15,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    drawingToolsTitle: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
+      marginBottom: 15,
+    },
+    drawingToolsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 15,
+    },
+    drawingColorOption: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      marginHorizontal: 5,
+      borderWidth: 1,
+      borderColor: colorScheme === "dark" ? COLORS.dark.border : COLORS.light.border,
+    },
+    drawingColorSelected: {
+      borderWidth: 2,
+      borderColor: colorScheme === "dark" ? COLORS.dark.accent : COLORS.light.accent,
+    },
+    brushSizeContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-around",
+      marginTop: 10,
+    },
+    brushSizeOption: {
+      height: 30,
+      justifyContent: "center",
+      alignItems: "center",
+      marginHorizontal: 5,
+    },
+    brushSizeDot: {
+      backgroundColor: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
+      borderRadius: 50,
+    },
+    brushSizeSelected: {
+      backgroundColor: colorScheme === "dark" ? COLORS.dark.accent : COLORS.light.accent,
+    },
+    drawingActionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 10,
+    },
+    drawingActionButton: {
+      padding: 10,
+      borderRadius: 5,
+      backgroundColor: colorScheme === "dark" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    drawingActionText: {
+      color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
+      marginLeft: 5,
+    }
   }), [colorScheme, selectedColor]);
 
   return (
@@ -291,7 +374,7 @@ export default function CreateNote() {
             </View>
             
             <View style={styles.headerRightGroup}>
-            <Pressable 
+              <Pressable 
                 style={({ pressed }) => [
                   styles.actionButton,
                   pressed && styles.actionButtonPressed
@@ -318,12 +401,13 @@ export default function CreateNote() {
                   color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} 
                 />
               </Pressable>
+              
               <Pressable 
                 style={({ pressed }) => [
                   styles.actionButton,
                   pressed && styles.actionButtonPressed
                 ]} 
-                onPress={() => setIsFavorite(!isFavorite)}
+                onPress={toggleFavorite}
               >
                 <Feather 
                   name="heart" 
@@ -337,7 +421,7 @@ export default function CreateNote() {
                   styles.actionButton,
                   pressed && styles.actionButtonPressed
                 ]} 
-                onPress={handleShare}
+                onPress={shareNote}
               >
                 <Feather 
                   name="share" 
@@ -370,126 +454,144 @@ export default function CreateNote() {
             </View>
           </View>
           
-          <ScrollView style={styles.content}>
-            {/* Title input */}
-            <TextInput
-              style={styles.titleInput}
-              placeholder="Title"
-              placeholderTextColor={colorScheme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)"}
-              value={title}
-              onChangeText={setTitle}
-              multiline={false}
-              maxLength={100}
-              onFocus={() => setIsAnyInputFocused(true)}
-              onBlur={() => {
-                // Only set to false if content is also not focused
-                if (!content) setIsAnyInputFocused(false);
-              }}
-            />
-            
-            {/* Content input */}
-            <TextInput
-              style={styles.contentInput}
-              placeholder="Start typing..."
-              placeholderTextColor={colorScheme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)"}
-              value={content}
-              onChangeText={setContent}
-              multiline={true}
-              textAlignVertical="top"
-              onFocus={() => setIsAnyInputFocused(true)}
-              onBlur={() => {
-                // Only set to false if title is also not focused
-                if (!title) setIsAnyInputFocused(false);
-              }}
-            />
-          </ScrollView>
+          {isDrawingMode ? (
+            // Drawing canvas placeholder - in a real app, you'd use a proper drawing component
+            <View style={styles.drawingCanvas}>
+              <Text style={{
+                textAlign: 'center',
+                marginTop: 20,
+                color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text,
+              }}>
+                Drawing Canvas
+                {'\n'}
+                (Pen color: {selectedDrawingColor}, Size: {selectedBrushSize})
+              </Text>
+            </View>
+          ) : (
+            // Regular note content
+            <ScrollView style={styles.content}>
+              {/* Title input */}
+              <TextInput
+                style={styles.titleInput}
+                placeholder="Title"
+                placeholderTextColor={colorScheme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)"}
+                value={title}
+                onChangeText={setTitle}
+                multiline={false}
+                maxLength={100}
+                onFocus={() => setIsAnyInputFocused(true)}
+                onBlur={() => {
+                  // Only set to false if content is also not focused
+                  if (!content) setIsAnyInputFocused(false);
+                }}
+              />
+              
+              {/* Content input */}
+              <TextInput
+                style={styles.contentInput}
+                placeholder="Start typing..."
+                placeholderTextColor={colorScheme === "dark" ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)"}
+                value={content}
+                onChangeText={setContent}
+                multiline={true}
+                textAlignVertical="top"
+                onFocus={() => setIsAnyInputFocused(true)}
+                onBlur={() => {
+                  // Only set to false if title is also not focused
+                  if (!title) setIsAnyInputFocused(false);
+                }}
+              />
+            </ScrollView>
+          )}
           
           {/* Bottom toolbar */}
           <View style={styles.toolbarContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolbarScrollContent}>
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="type" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="link" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="edit-2" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="paperclip" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="check-square" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-                onPress={() => {
-                  setShowColorPicker(!showColorPicker);
-                  setShowFolderPicker(false);
-                }}
-              >
-                <Feather name="droplet" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
-              
-              
-              
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-              >
-                <Feather name="list" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={styles.toolbarScrollContent}
+            >
+              <View style={styles.toolbarIconGroup}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                >
+                  <Feather name="type" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                >
+                  <Feather name="link" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    isDrawingMode && styles.toolbarButtonActive,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                  onPress={toggleDrawingMode}
+                >
+                  <Feather name="edit-2" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                >
+                  <Feather name="paperclip" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                >
+                  <Feather name="check-square" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                  onPress={toggleColorPicker}
+                >
+                  <Feather name="droplet" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+                
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                >
+                  <Feather name="list" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+              </View>
               
               <View style={styles.toolbarDivider} />
               
-              <Pressable 
-                style={({ pressed }) => [
-                  styles.toolbarButton,
-                  pressed && styles.toolbarButtonPressed
-                ]} 
-                onPress={() => {
-                  setShowFolderPicker(!showFolderPicker);
-                  setShowColorPicker(false);
-                }}
-              >
-                <Feather name="folder" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
-              </Pressable>
+              <View style={styles.toolbarIconGroup}>
+                <Pressable 
+                  style={({ pressed }) => [
+                    styles.toolbarButton,
+                    pressed && styles.toolbarButtonPressed
+                  ]} 
+                  onPress={toggleFolderPicker}
+                >
+                  <Feather name="folder" size={20} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                </Pressable>
+              </View>
             </ScrollView>
           </View>
           
@@ -525,7 +627,7 @@ export default function CreateNote() {
                   ]}
                   onPress={() => {
                     setSelectedFolderId(null);
-                    setShowFolderPicker(false);
+                    toggleFolderPicker();
                   }}
                 >
                   <View style={styles.folderIcon}>
@@ -547,7 +649,7 @@ export default function CreateNote() {
                     ]}
                     onPress={() => {
                       setSelectedFolderId(folder.id);
-                      setShowFolderPicker(false);
+                      toggleFolderPicker();
                     }}
                   >
                     <View style={styles.folderIcon}>
@@ -563,9 +665,74 @@ export default function CreateNote() {
               </ScrollView>
             </View>
           )}
+          
+          {/* Drawing tools popup */}
+          {showDrawingTools && (
+            <View style={styles.drawingToolsContainer}>
+              <Text style={styles.drawingToolsTitle}>Drawing Tools</Text>
+              
+              <Text style={{color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text, marginBottom: 5}}>Colors:</Text>
+              <View style={styles.drawingToolsRow}>
+                {drawingColors.map((color) => (
+                  <Pressable
+                    key={color}
+                    style={[
+                      styles.drawingColorOption,
+                      { backgroundColor: color },
+                      selectedDrawingColor === color && styles.drawingColorSelected,
+                    ]}
+                    onPress={() => setSelectedDrawingColor(color)}
+                  />
+                ))}
+              </View>
+              
+              <Text style={{color: colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text, marginBottom: 5}}>Brush Size:</Text>
+              <View style={styles.brushSizeContainer}>
+                {brushSizes.map((size) => (
+                  <Pressable
+                    key={size}
+                    style={[
+                      styles.brushSizeOption,
+                      { width: size * 2 + 20 }
+                    ]}
+                    onPress={() => setSelectedBrushSize(size)}
+                  >
+                    <View
+                      style={[
+                        styles.brushSizeDot,
+                        { width: size, height: size },
+                        selectedBrushSize === size && styles.brushSizeSelected,
+                      ]}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+              
+              <View style={styles.drawingActionsRow}>
+                <Pressable style={styles.drawingActionButton} onPress={clearDrawing}>
+                  <Feather name="trash-2" size={16} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                  <Text style={styles.drawingActionText}>Clear</Text>
+                </Pressable>
+                
+                <Pressable style={styles.drawingActionButton} onPress={toggleDrawingMode}>
+                  <Feather name="check" size={16} color={colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text} />
+                  <Text style={styles.drawingActionText}>Done</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
+  );
+}
+
+// Define a wrapper component that provides the context
+export default function CreateNote() {
+  return (
+    <CreateNoteProvider>
+      <CreateNoteContent />
+    </CreateNoteProvider>
   );
 }
         
