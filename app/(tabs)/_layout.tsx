@@ -10,11 +10,15 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import NoteDetailsBottomSheet from "@/src/components/NoteDetailsBottomSheet";
 import ViewMenu from "@/src/components/ViewMenu";
 import SelectionBottomTab from "@/src/components/SelectionBottomTab";
+import FolderSelectionBottomTab from "@/src/components/FolderSelectionBottomTab";
+import { usePathname } from "expo-router";
 
 // Create a separate component that will use the context
 function TabsLayoutContent() {
-  const { isMoreMenuOpen, setIsMoreMenuOpen, isSelectionMode, isViewMenuOpen, setIsViewMenuOpen, selectedNoteIds } = useTabs();
+  const { isMoreMenuOpen, setIsMoreMenuOpen, isSelectionMode, isViewMenuOpen, setIsViewMenuOpen, selectedNoteIds, selectedFolderIds, isInFolderSelectionMode } = useTabs();
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
+  const isInFoldersRoute = pathname === "/folders";
   
   return (
     <>
@@ -72,7 +76,11 @@ function TabsLayoutContent() {
         </Backdrop>
       )}
       <NoteDetailsBottomSheet />
-      {isSelectionMode && selectedNoteIds.length > 0 && <SelectionBottomTab />}
+      
+      {/* Show appropriate selection bottom tab */}
+      {isSelectionMode && isInFoldersRoute && selectedFolderIds.length > 0 && <FolderSelectionBottomTab />}
+      {isSelectionMode && !isInFoldersRoute && selectedNoteIds.length > 0 && <SelectionBottomTab />}
+      
       </GestureHandlerRootView>
     </>
   );

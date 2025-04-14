@@ -1,6 +1,8 @@
 import { createContext, useContext, useMemo, useState, useEffect, useCallback } from "react";
-import { Note } from "../types/Note";
-import { notesData, NoteView } from "../mock/NotesData";
+import { Note, Folder } from "../types/Note";
+import { notesData, NoteView, foldersData } from "../mock/NotesData";
+import { BackHandler } from "react-native";
+
 interface TabsContextType {
     isMoreMenuOpen: boolean;
     isViewMenuOpen: boolean;    
@@ -24,6 +26,13 @@ interface TabsContextType {
     handleSelection: () => void;
     toggleNoteView: () => void;
     handleSetNoteView: (view: string) => void;
+    // Folder selection
+    selectedFolderIds: string[];
+    setSelectedFolderIds: (folderIds: string[]) => void;
+    toggleFolderSelection: (folderId: string) => void;
+    selectAllFolders: (folders: Folder[]) => void;
+    clearFolderSelection: () => void;
+    isInFolderSelectionMode: () => boolean;
 }
 export const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
@@ -35,6 +44,7 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
     const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
     const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>([]);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>([]);
 
     // Initial Render
     useEffect(() => {
@@ -93,12 +103,50 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
         setSelectedNoteIds(notes.map(note => note.id.toString()))
     }, []);
 
-    // Clear selection and exit selection mode if needed
+    // Toggle folder selection
+    const toggleFolderSelection = useCallback((folderId: string) => {
+        if (!isSelectionMode) {
+            // If not in selection mode, enter it and add this folder
+            setIsSelectionMode(true);
+            setSelectedFolderIds([folderId]);
+            return;
+        }
+        
+        setSelectedFolderIds(prev => {
+            // If already selected, remove it
+            if (prev.includes(folderId)) {
+                const newSelection = prev.filter(id => id !== folderId);
+                // If no more selected folders, exit selection mode
+                if (newSelection.length === 0) {
+                    setIsSelectionMode(false);
+                }
+                return newSelection;
+            }
+            // Otherwise add it
+            return [...prev, folderId];
+        });
+    }, [isSelectionMode]);
+
+    // Select all folders
+    const selectAllFolders = useCallback((folders: Folder[]) => {
+        setSelectedFolderIds(folders.map(folder => folder.id.toString()));
+    }, []);
+
+    // Clear folder selection
+    const clearFolderSelection = useCallback(() => {
+        setSelectedFolderIds([]);
+        if (selectedNoteIds.length === 0) {
+            setIsSelectionMode(false);
+        }
+    }, [selectedNoteIds]);
+
+    // Modified clear selection to clear both notes and folders
     const clearSelection = useCallback(() => {
         setSelectedNoteIds([]);
+        setSelectedFolderIds([]);
         setIsSelectionMode(false);
     }, []);
-    
+
     // Optimized to use a callback for better performance
     const toggleSelectionMode = useCallback(() => {
         setIsSelectionMode(prev => !prev);
@@ -118,6 +166,29 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
         setNoteView(view);
         setIsViewMenuOpen(false);
     }, []);
+
+    // Check if in folder selection mode
+    const isInFolderSelectionMode = useCallback(() => {
+        return isSelectionMode && selectedFolderIds.length > 0;
+    }, [isSelectionMode, selectedFolderIds]);
+
+    // Handle back button press to cancel selection mode
+    useEffect(() => {
+        const backAction = () => {
+            if (isSelectionMode) {
+                clearSelection();
+                return true; // Prevents default behavior (exit app)
+            }
+            return false; // Allows default behavior
+        };
+
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction
+        );
+
+        return () => backHandler.remove(); // Cleanup on unmount
+    }, [isSelectionMode, clearSelection]);
 
     return (
         <TabsContext.Provider value={{ 
@@ -142,7 +213,14 @@ export const TabsProvider = ({ children }: { children: React.ReactNode }) => {
             toggleSelectionMode,
             handleSelection,
             toggleNoteView,
-            handleSetNoteView
+            handleSetNoteView,
+            // Folder selection
+            selectedFolderIds,
+            setSelectedFolderIds,
+            toggleFolderSelection,
+            selectAllFolders,
+            clearFolderSelection,
+            isInFolderSelectionMode
         }}>
             {children}
         </TabsContext.Provider>

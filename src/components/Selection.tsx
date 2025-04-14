@@ -4,10 +4,29 @@ import Feather from "@expo/vector-icons/Feather";
 import { useTabs } from "../contexts/TabsContext";
 import { useState } from "react";
 
-export default function Selection({selectedNoteIds}: {selectedNoteIds: string[]}) {
+interface SelectionProps {
+  selectedNoteIds?: string[];
+  selectedIds?: string[];
+  selectionType?: 'notes' | 'folders';
+}
+
+export default function Selection({ selectedNoteIds, selectedIds, selectionType = 'notes' }: SelectionProps) {
   const colorScheme = useColorScheme();
-  const {clearSelection, toggleSelectionMode} = useTabs();
+  const { clearSelection, toggleSelectionMode, clearFolderSelection } = useTabs();
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+  
+  // Use the appropriate selection based on props
+  const items = selectedIds || selectedNoteIds || [];
+  const itemType = selectionType === 'folders' ? 'Folders' : 'Notes';
+  
+  // Clear the appropriate selection
+  const handleClearSelection = () => {
+    if (selectionType === 'folders') {
+      clearFolderSelection();
+    } else {
+      clearSelection();
+    }
+  };
 
   const SelectionStyle = StyleSheet.create({
     container: {  
@@ -47,12 +66,12 @@ export default function Selection({selectedNoteIds}: {selectedNoteIds: string[]}
   return (
     <View style={SelectionStyle.container}>
       <Text style={SelectionStyle.title}>
-        Selected Notes ({selectedNoteIds.length})
+        Selected {itemType} ({items.length})
       </Text>    
       <View style={SelectionStyle.rightContainer}>    
-        {selectedNoteIds.length > 0 && (
+        {items.length > 0 && (
           <Pressable 
-            onPress={() => clearSelection()}
+            onPress={() => handleClearSelection()}
             onPressIn={() => setPressedButton('deselect')}
             onPressOut={() => setPressedButton(null)}
             style={[
