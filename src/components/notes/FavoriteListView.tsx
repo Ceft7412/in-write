@@ -115,7 +115,10 @@ export default function FavoriteListView() {
         delayLongPress={200}
         style={[
           themeStyles.noteItem,
-          isSelected && isSelectionMode && themeStyles.selectedNote
+          isSelected && isSelectionMode && themeStyles.selectedNote,
+          {
+            backgroundColor: note.backgroundColor,
+          }
         ]}
       >
         <View>

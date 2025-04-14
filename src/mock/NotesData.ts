@@ -1,4 +1,4 @@
-import { Note } from "@/src/types/Note";
+import { Note, Folder} from "@/src/types/Note";
 
 
 export const NoteView = {
@@ -6,6 +6,33 @@ export const NoteView = {
   list: "list",
   table: "table",
 }
+
+export const foldersData: Folder[] = [
+  {
+    id: 1,
+    name: "Folder 1",
+    folderColor: "#fbbc04",
+    parentFolderId: null,
+  },
+  {
+    id: 2,
+    name: "Folder 2",
+    folderColor: "#fbbc04",
+    parentFolderId: null,
+  },
+  {
+    id: 3,
+    name: "Folder 3", 
+    folderColor: "#fbbc04",
+    parentFolderId: 1,
+  },
+  {
+    id: 4,
+    name: "Folder 4",
+    folderColor: "#fbbc04",
+    parentFolderId: null,
+  },
+];
 
 /*
  * Mock data for notes
@@ -21,6 +48,7 @@ export const notesData: Note[] = [
     isFavorite: true,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 2,
@@ -32,6 +60,7 @@ export const notesData: Note[] = [
     isFavorite: true,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 3,
@@ -43,6 +72,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 4,
@@ -54,6 +84,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 5,
@@ -65,6 +96,7 @@ export const notesData: Note[] = [
     isFavorite: true,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 6,
@@ -76,6 +108,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 7,
@@ -87,6 +120,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 8,
@@ -98,6 +132,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 9,
@@ -109,6 +144,7 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
   {
     id: 10,
@@ -120,5 +156,6 @@ export const notesData: Note[] = [
     isFavorite: false,
     isArchived: false,
     isTrashed: false,
+    folderId: 1,
   },
 ];
