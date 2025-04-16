@@ -8,8 +8,7 @@ import {
   FlatList,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
-  TextInputSelectionChangeEventData,
-  Keyboard,
+  TextInputSubmitEditingEventData,
 } from 'react-native';
 
 type BlockType = 'paragraph' | 'heading' | 'bullet-list';
@@ -20,6 +19,11 @@ interface Block {
   content: string;
 }
 
+/**
+ * Creates an empty block with a given type
+ * @param type - The type of block to create
+ * @returns A new block with the given type and an empty content string
+ */
 const createEmptyBlock = (type: BlockType = 'paragraph'): Block => ({
   id: Math.random().toString(36).substring(2, 9),
   type,
@@ -30,185 +34,165 @@ export default function NoteEditor() {
   const [blocks, setBlocks] = useState<Block[]>([createEmptyBlock()]);
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const inputsRef = useRef<Record<string, TextInput | null>>({});
-  const processingEnter = useRef(false);
-  const selectionRef = useRef<Record<string, { start: number; end: number }>>({});
+  const blockToFocus = useRef<string | null>(null);
 
+
+  /**
+   * When the blocks array changes, focus on the block that needs to be focused
+   */
   useEffect(() => {
-    console.log('Blocks:', blocks);
-  }, [blocks]);
-
-  const handleSelectionChange = (
-    event: NativeSyntheticEvent<TextInputSelectionChangeEventData>,
-    blockId: string
-  ) => {
-    const { selection } = event.nativeEvent;
-    selectionRef.current[blockId] = selection;
-  };
-
-  // Create a new block after the given index
-  const createNewBlockAfter = (index: number, initialContent: string = '') => {
-    const newBlock = {
-      ...createEmptyBlock(),
-      content: initialContent
-    };
-    
-    const newBlockId = newBlock.id;
-    
-    // Insert the new block
-    setBlocks(prev => {
-      const updated = [...prev];
-      updated.splice(index + 1, 0, newBlock);
-      return updated;
-    });
-    
-    // Focus the new block after a very short delay
-    setFocusedBlockId(newBlockId);
-    
-    setTimeout(() => {
-      const input = inputsRef.current[newBlockId];
+    console.log("Blocks", blocks);
+    if (blockToFocus.current) {
+      const id = blockToFocus.current;
+      const input = inputsRef.current[id];
       if (input) {
         input.focus();
+        setFocusedBlockId(id);
+        blockToFocus.current = null;
       }
-    }, 10);
-    
-    return newBlockId;
+    }
+  }, [blocks]);
+
+  /**
+   * Insert a new block after the current block
+   * @param afterIndex - The index of the block after which the new block will be inserted
+   * @returns void - Modifies state by inserting a new block
+   */
+  const insertNewBlock = (afterIndex: number) => {
+    const newBlock = createEmptyBlock();
+    setBlocks((prev) => {
+      const updated = [...prev];
+      updated.splice(afterIndex + 1, 0, newBlock);
+      return updated;
+    });
+    blockToFocus.current = newBlock.id;
   };
 
-  const handleTextChange = (text: string, id: string) => {
-    // If we're actively processing an Enter key, don't update text
-    if (processingEnter.current) {
-      return;
-    }
-    
-    // If the text somehow contains a newline (fallback for different platforms)
-    if (text.includes('\n')) {
-      processingEnter.current = true;
-      
-      // Get the newline position
-      const newlineIndex = text.indexOf('\n');
-      
-      // Split the text
-      const beforeNewline = text.substring(0, newlineIndex);
-      const afterNewline = text.substring(newlineIndex + 1);
-      
-      // Update the current block with text before the newline
-      setBlocks(prev => 
-        prev.map(block => 
-          block.id === id ? { ...block, content: beforeNewline } : block
-        )
-      );
-      
-      // Find the index of the current block
-      const blockIndex = blocks.findIndex(block => block.id === id);
-      if (blockIndex !== -1) {
-        // Create new block with text after the newline
-        createNewBlockAfter(blockIndex, afterNewline);
-      }
-      
-      // Reset processing flag after a short delay
-      setTimeout(() => {
-        processingEnter.current = false;
-      }, 50);
-      
-      return;
-    }
-    
-    // Normal text update
-    setBlocks((prev) =>
-      prev.map((block) => (block.id === id ? { ...block, content: text } : block))
-    );
-  };
-
+  
+  /**
+   * Handles key press events for block text input with special handling for Enter and Backspace.
+   * 
+   * @param e - The keyboard event from React Native
+   * @param index - The position of the current block in the blocks array
+   * @param block - The current block being edited
+   * @returns void - May modify state by inserting new blocks or handling deletions
+   */
   const handleKeyPress = (
     e: NativeSyntheticEvent<TextInputKeyPressEventData>,
     index: number,
     block: Block
-  ) => {
-    const key = e.nativeEvent.key;
-    
-    // Intercept Enter key
-    if (key === 'Enter') {
-      // Prevent default Enter behavior
-      e.preventDefault?.();
-      
-      // Set flag to prevent handleTextChange from processing any newline
-      processingEnter.current = true;
-      
-      // Get current selection
-      const selection = selectionRef.current[block.id] || { start: block.content.length, end: block.content.length };
-      
-      // Split text at cursor position
-      const beforeCursor = block.content.substring(0, selection.start);
-      const afterCursor = block.content.substring(selection.end);
-      
-      // Update current block to contain only text before cursor
-      setBlocks(prev => 
-        prev.map(item => 
-          item.id === block.id ? { ...item, content: beforeCursor } : item
-        )
-      );
-      
-      // Create new block with text after cursor
-      createNewBlockAfter(index, afterCursor);
-      
-      // Reset processing flag after a delay
-      setTimeout(() => {
-        processingEnter.current = false;
-      }, 50);
-      
-      return true;
-    }
+  ): void => {
+    const { key } = e.nativeEvent;
 
-    // BACKSPACE on empty -> delete block
-    if (key === 'Backspace' && block.content === '' && blocks.length > 1) {
-      // Prevent default behavior
-      e.preventDefault?.();
-      
-      // Get the previous block info before removing current block
+    switch (key) {
+      case 'Enter':
+        e.preventDefault?.();
+        e.currentTarget.blur?.();
+        insertNewBlock(index);
+        break;
+
+      case 'Backspace':
+        if (block.content === '') {
+          handleBackspace(index, block);
+        }
+        break;
+
+      default:
+        // No special handling for other keys
+        break;
+    }
+  };
+
+  
+  /**
+   * Handles backspace key press events for block text input.
+   * 
+   * @param index - The position of the current block in the blocks array
+   * @param block - The current block being edited
+   * @returns void - Modifies state by deleting the current block if it's empty and there are multiple blocks
+   */
+  const handleBackspace = (index: number, block: Block) => {
+    // Only delete if the block is empty and not the only block
+    if (block.content === '' && blocks.length > 1) {
+      // Find the previous block
       const previousBlock = blocks[index - 1];
-      const previousBlockContent = previousBlock?.content || '';
+      
+      if (previousBlock) {
+        blockToFocus.current = previousBlock.id;
+      }
       
       setBlocks((prev) => {
         const updated = [...prev];
         updated.splice(index, 1);
         return updated;
       });
-
-      // Focus the previous block
-      if (previousBlock) {
-        setTimeout(() => {
-          const input = inputsRef.current[previousBlock.id];
-          if (input) {
-            input.focus();
-          }
-        }, 10);
-      }
     }
   };
 
+
+  /**
+   * Updates the content of a specific block in the blocks array.
+   * 
+   * @param text - The new text content to set
+   * @param id - The ID of the block to update
+   * @returns void - Modifies state by updating the blocks array
+   */
+  const handleTextChange = (text: string, id: string): void => {
+    // Early return if block doesn't exist
+    if (!blocks.some(block => block.id === id)) return;
+
+    setBlocks(prevBlocks => 
+      prevBlocks.map(block => 
+        block.id === id 
+          ? { ...block, content: text } 
+          : block
+      )
+    );
+  };
+
+  /**
+   * Determines whether to show a placeholder for a block based on its position and content.
+   * 
+   * @param item - The block to check
+   * @param index - The position of the block in the blocks array
+   * @returns True if placeholder should be shown, which occurs when:
+   *          - It's the first block and empty, OR
+   *          - It's the only block and empty
+   */
+  const shouldShowPlaceholder = (item: Block, index: number): boolean => {
+    const isEmpty = item.content === '';
+    return (index === 0 && isEmpty) || (blocks.length === 1 && isEmpty);
+  };  
+
+  /**
+   * Renders a block with a text input.
+   * 
+   * @param item - The block to render
+   * @param index - The position of the block in the blocks array
+   * @returns A React element representing the block
+   */
   const renderBlock = ({ item, index }: { item: Block; index: number }) => (
-    <View style={{ borderBottomWidth: 1, borderBottomColor: 'red'}}>
+    <View>
       <TextInput
         key={item.id}
         ref={(ref) => (inputsRef.current[item.id] = ref)}
         value={item.content}
         onChangeText={(text) => handleTextChange(text, item.id)}
+        placeholder={shouldShowPlaceholder(item, index) ? 'Enter your text here' : ''}
+        returnKeyType="none"
         onKeyPress={(e) => handleKeyPress(e, index, item)}
-        onSelectionChange={(e) => handleSelectionChange(e, item.id)}
-        placeholder={item.type === 'heading' ? 'Heading' : 'Type something...'}
         style={[
           styles.input,
           item.type === 'heading' && styles.heading,
           item.type === 'bullet-list' && styles.bulletItem,
         ]}
+        submitBehavior="submit"
+        multiline={true}
         scrollEnabled={false}
-        multiline
         autoFocus={focusedBlockId === item.id}
         onFocus={() => setFocusedBlockId(item.id)}
-        returnKeyType="next"
-        blurOnSubmit={false}
       />
-    </View>
+      </View>
   );
 
   return (
@@ -236,11 +220,9 @@ const styles = StyleSheet.create({
   input: {
     fontSize: 16,
     color: '#222',
-    lineHeight: 20,
-    padding:0,
-    paddingVertical: 0,
+    lineHeight: 28,
+    padding: 0,
     marginVertical: 0,
-    borderBottomWidth: 1,
   },
   heading: {
     fontSize: 24,

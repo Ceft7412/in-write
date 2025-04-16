@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Pressable, useColorScheme, ScrollView, Platform, Keyboard } from 'react-native';
 import { COLORS } from '@/src/constants/COLORS';
-import { Feather, MaterialIcons, FontAwesome, AntDesign, Ionicons } from '@expo/vector-icons';
+import { Feather, MaterialIcons, FontAwesome, FontAwesome5, AntDesign, Ionicons } from '@expo/vector-icons';
 import { useCreateNote } from '@/src/contexts/CreateNoteContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlockType } from '@/src/types/Block';
@@ -13,7 +13,7 @@ interface NoteOptionsToolbarProps {
   onToggleFolderPicker: () => void;
 }
 
-type IconType = 'Feather' | 'MaterialIcons' | 'FontAwesome' | 'AntDesign' | 'Ionicons';
+  type IconType = 'Feather' | 'MaterialIcons' | 'FontAwesome' | 'FontAwesome5' | 'AntDesign' | 'Ionicons';
 
 interface ToolItem {
   id: string;
@@ -144,7 +144,7 @@ export default function NoteOptionsToolbar({
     {
       id: 'heading',
       icon: 'heading',
-      iconType: 'FontAwesome',
+      iconType: 'FontAwesome5',
       onPress: () => handleBlockTypeChange('heading_1'),
     },
     {
@@ -198,6 +198,8 @@ export default function NoteOptionsToolbar({
         return <MaterialIcons name={tool.icon as any} size={iconSize} color={iconColor} />;
       case 'FontAwesome':
         return <FontAwesome name={tool.icon as any} size={iconSize} color={iconColor} />;
+      case 'FontAwesome5':
+        return <FontAwesome5 name={tool.icon as any} size={iconSize} color={iconColor} />;
       case 'AntDesign':
         return <AntDesign name={tool.icon as any} size={iconSize} color={iconColor} />;
       case 'Ionicons':

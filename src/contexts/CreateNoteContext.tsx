@@ -136,6 +136,8 @@ export const CreateNoteProvider = ({ children }: { children: ReactNode }) => {
     
     return newBlock.id;
   }, []);
+
+  
   
   const updateBlockContent = useCallback((blockId: string, content: RichTextElement[]) => {
     setBlocks(currentBlocks => 
