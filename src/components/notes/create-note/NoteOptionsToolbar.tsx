@@ -59,7 +59,11 @@ export default function NoteOptionsToolbar({
     };
   }, []);
   
-  // Change block type of the currently focused block
+  /**
+   * Changes the type of the currently focused block
+   * If no block is focused, a new block of the specified type is added
+   * @param newType - The new type of block to add
+   */
   const handleBlockTypeChange = (newType: BlockType) => {
     if (focusedBlockId) {
       changeBlockType(focusedBlockId, newType);
@@ -69,7 +73,11 @@ export default function NoteOptionsToolbar({
     }
   };
   
-  // Toggle to-do list item
+  
+  /**
+   * Toggles the type of the currently focused block between to_do and paragraph
+   * If no block is focused, a new to-do block is added
+   */
   const handleToDoToggle = () => {
     if (focusedBlockId) {
       // Find the current block to see its type
@@ -188,7 +196,11 @@ export default function NoteOptionsToolbar({
     onPress: onToggleFolderPicker,
   };
 
-  // Helper function to render the appropriate icon
+  /**
+   * Renders the appropriate icon for a given tool
+   * @param tool - The tool to render the icon for
+   * @returns The rendered icon
+   */
   const renderIcon = (tool: ToolItem) => {
     const iconColor = colorScheme === "dark" ? COLORS.dark.text : COLORS.light.text;
     const iconSize = 20;
